@@ -5,37 +5,37 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #if ! __has_feature(objc_arc)
-    #define FMDBAutorelease(__v) ([__v autorelease]);
-    #define FMDBReturnAutoreleased FMDBAutorelease
+#define FMDBAutorelease(__v) ([__v autorelease]);
+#define FMDBReturnAutoreleased FMDBAutorelease
 
-    #define FMDBRetain(__v) ([__v retain]);
-    #define FMDBReturnRetained FMDBRetain
+#define FMDBRetain(__v) ([__v retain]);
+#define FMDBReturnRetained FMDBRetain
 
-    #define FMDBRelease(__v) ([__v release]);
+#define FMDBRelease(__v) ([__v release]);
 
-    #define FMDBDispatchQueueRelease(__v) (dispatch_release(__v));
+#define FMDBDispatchQueueRelease(__v) (dispatch_release(__v));
 #else
-    // -fobjc-arc
-    #define FMDBAutorelease(__v)
-    #define FMDBReturnAutoreleased(__v) (__v)
+// -fobjc-arc
+#define FMDBAutorelease(__v)
+#define FMDBReturnAutoreleased(__v) (__v)
 
-    #define FMDBRetain(__v)
-    #define FMDBReturnRetained(__v) (__v)
+#define FMDBRetain(__v)
+#define FMDBReturnRetained(__v) (__v)
 
-    #define FMDBRelease(__v)
+#define FMDBRelease(__v)
 
 // If OS_OBJECT_USE_OBJC=1, then the dispatch objects will be treated like ObjC objects
 // and will participate in ARC.
 // See the section on "Dispatch Queues and Automatic Reference Counting" in "Grand Central Dispatch (GCD) Reference" for details. 
-    #if OS_OBJECT_USE_OBJC
-        #define FMDBDispatchQueueRelease(__v)
-    #else
-        #define FMDBDispatchQueueRelease(__v) (dispatch_release(__v));
-    #endif
+#if OS_OBJECT_USE_OBJC
+#define FMDBDispatchQueueRelease(__v)
+#else
+#define FMDBDispatchQueueRelease(__v) (dispatch_release(__v));
+#endif
 #endif
 
 #if !__has_feature(objc_instancetype)
-    #define instancetype id
+#define instancetype id
 #endif
 
 /**
@@ -57,32 +57,32 @@ typedef NS_ENUM(int, FMDBCheckpointMode) {
 #pragma clang diagnostic ignored "-Wobjc-interface-ivars"
 
 /** A SQLite ([https://sqlite.org/](https://sqlite.org/)) Objective-C wrapper.
-
+ 
  Usage
-
+ 
  The three main classes in FMDB are:
-
+ 
  - @c FMDatabase - Represents a single SQLite database.  Used for executing SQL statements.
-
+ 
  - @c FMResultSet - Represents the results of executing a query on an @c FMDatabase .
-
+ 
  - @c FMDatabaseQueue - If you want to perform queries and updates on multiple threads, you'll want to use this class.
-
+ 
  See also
-
+ 
  - @c FMDatabasePool - A pool of @c FMDatabase objects
-
+ 
  - @c FMStatement - A wrapper for @c sqlite_stmt
-
+ 
  External links
-
+ 
  - [FMDB on GitHub](https://github.com/ccgus/fmdb) including introductory documentation
  - [SQLite web site](https://sqlite.org/)
  - [FMDB mailing list](http://groups.google.com/group/fmdb)
  - [SQLite FAQ](https://sqlite.org/faq.html)
-
+ 
  @warning Do not instantiate a single @c FMDatabase  object and use it across multiple threads. Instead, use @c FMDatabaseQueue .
-
+ 
  */
 
 @interface FMDatabase : NSObject
@@ -118,27 +118,27 @@ typedef NS_ENUM(int, FMDBCheckpointMode) {
 /** Create a @c FMDatabase  object.
  
  An @c FMDatabase  is created with a path to a SQLite database file.  This path can be one of these three:
-
+ 
  1. A file system path.  The file does not have to exist on disk.  If it does not exist, it is created for you.
-
+ 
  2. An zero-length string.  An empty database is created at a temporary location.  This database is deleted with the @c FMDatabase  connection is closed.
-
+ 
  3. @c nil .  An in-memory database is created.  This database will be destroyed with the @c FMDatabase  connection is closed.
-
+ 
  For example, to open a database in the app's “Application Support” directory:
-
-@code
-NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
-NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
-FMDatabase *db = [FMDatabase databaseWithPath:fileURL.path];
-@endcode
-
+ 
+ @code
+ NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
+ NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
+ FMDatabase *db = [FMDatabase databaseWithPath:fileURL.path];
+ @endcode
+ 
  (For more information on temporary and in-memory databases, read the sqlite documentation on the subject: [https://sqlite.org/inmemorydb.html](https://sqlite.org/inmemorydb.html))
-
+ 
  @param inPath Path of database file
-
+ 
  @return @c FMDatabase  object if successful; @c nil  if failure.
-
+ 
  */
 
 + (instancetype)databaseWithPath:(NSString * _Nullable)inPath;
@@ -148,17 +148,17 @@ FMDatabase *db = [FMDatabase databaseWithPath:fileURL.path];
  An @c FMDatabase  is created with a path to a SQLite database file.  This path can be one of these three:
  
  1. A file system URL.  The file does not have to exist on disk.  If it does not exist, it is created for you.
-
+ 
  2. @c nil .  An in-memory database is created.  This database will be destroyed with the @c FMDatabase  connection is closed.
  
  For example, to open a database in the app's “Application Support” directory:
-
-@code
-NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
-NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
-FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
-@endcode
-
+ 
+ @code
+ NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
+ NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
+ FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
+ @endcode
+ 
  (For more information on temporary and in-memory databases, read the sqlite documentation on the subject: [https://sqlite.org/inmemorydb.html](https://sqlite.org/inmemorydb.html))
  
  @param url The local file URL (not remote URL) of database file
@@ -172,28 +172,28 @@ FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
 /** Initialize a @c FMDatabase  object.
  
  An @c FMDatabase  is created with a path to a SQLite database file.  This path can be one of these three:
-
+ 
  1. A file system path.  The file does not have to exist on disk.  If it does not exist, it is created for you.
-
+ 
  2. A zero-length string.  An empty database is created at a temporary location.  This database is deleted with the @c FMDatabase  connection is closed.
-
+ 
  3. @c nil .  An in-memory database is created.  This database will be destroyed with the @c FMDatabase  connection is closed.
-
-  For example, to open a database in the app's “Application Support” directory:
-
+ 
+ For example, to open a database in the app's “Application Support” directory:
+ 
  @code
  NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
  NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
  FMDatabase *db = [[FMDatabase alloc] initWithPath:fileURL.path];
  @endcode
-
-
+ 
+ 
  (For more information on temporary and in-memory databases, read the sqlite documentation on the subject: [https://sqlite.org/inmemorydb.html](https://sqlite.org/inmemorydb.html))
-
+ 
  @param path Path of database file.
  
  @return @c FMDatabase  object if successful; @c nil  if failure.
-
+ 
  */
 
 - (instancetype)initWithPath:(NSString * _Nullable)path;
@@ -203,17 +203,17 @@ FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
  An @c FMDatabase  is created with a local file URL to a SQLite database file.  This path can be one of these three:
  
  1. A file system URL.  The file does not have to exist on disk.  If it does not exist, it is created for you.
-
+ 
  2. @c nil .  An in-memory database is created.  This database will be destroyed with the @c FMDatabase  connection is closed.
  
-  For example, to open a database in the app's “Application Support” directory:
-
+ For example, to open a database in the app's “Application Support” directory:
+ 
  @code
  NSURL *folder  = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true error:&error];
  NSURL *fileURL = [folder URLByAppendingPathComponent:@"test.db"];
  FMDatabase *db = [[FMDatabase alloc] initWithURL:fileURL];
  @endcode
-
+ 
  (For more information on temporary and in-memory databases, read the sqlite documentation on the subject: [https://sqlite.org/inmemorydb.html](https://sqlite.org/inmemorydb.html))
  
  @param url The file @c NSURL  of database file.
@@ -235,9 +235,9 @@ FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
 /** Opening a new database connection
  
  The database is opened for reading and writing, and is created if it does not already exist.
-
+ 
  @return @c YES if successful, @c NO on error.
-
+ 
  @see [sqlite3_open()](https://sqlite.org/c3ref/open.html)
  @see openWithFlags:
  @see close
@@ -246,29 +246,29 @@ FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
 - (BOOL)open;
 
 /** Opening a new database connection with flags and an optional virtual file system (VFS)
-
+ 
  @param flags One of the following three values, optionally combined with the @c SQLITE_OPEN_NOMUTEX , @c SQLITE_OPEN_FULLMUTEX , @c SQLITE_OPEN_SHAREDCACHE , @c SQLITE_OPEN_PRIVATECACHE , and/or @c SQLITE_OPEN_URI flags:
-
-@code
-SQLITE_OPEN_READONLY
-@endcode
-
+ 
+ @code
+ SQLITE_OPEN_READONLY
+ @endcode
+ 
  The database is opened in read-only mode. If the database does not already exist, an error is returned.
  
-@code
-SQLITE_OPEN_READWRITE
-@endcode
-
+ @code
+ SQLITE_OPEN_READWRITE
+ @endcode
+ 
  The database is opened for reading and writing if possible, or reading only if the file is write protected by the operating system. In either case the database must already exist, otherwise an error is returned.
-
-@code
-SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-@endcode
+ 
+ @code
+ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+ @endcode
  
  The database is opened for reading and writing, and is created if it does not already exist. This is the behavior that is always used for @c open  method.
-  
+ 
  @return @c YES if successful, @c NO on error.
-
+ 
  @see [sqlite3_open_v2()](https://sqlite.org/c3ref/open.html)
  @see open
  @see close
@@ -280,22 +280,22 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
  
  @param flags One of the following three values, optionally combined with the @c SQLITE_OPEN_NOMUTEX , `SQLITE_OPEN_FULLMUTEX`, `SQLITE_OPEN_SHAREDCACHE`, @c SQLITE_OPEN_PRIVATECACHE , and/or @c SQLITE_OPEN_URI flags:
  
-@code
-SQLITE_OPEN_READONLY
-@endcode
-
-  The database is opened in read-only mode. If the database does not already exist, an error is returned.
-
-@code
-SQLITE_OPEN_READWRITE
-@endcode
-
-  The database is opened for reading and writing if possible, or reading only if the file is write protected by the operating system. In either case the database must already exist, otherwise an error is returned.
-
-@code
-SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-@endcode
-
+ @code
+ SQLITE_OPEN_READONLY
+ @endcode
+ 
+ The database is opened in read-only mode. If the database does not already exist, an error is returned.
+ 
+ @code
+ SQLITE_OPEN_READWRITE
+ @endcode
+ 
+ The database is opened for reading and writing if possible, or reading only if the file is write protected by the operating system. In either case the database must already exist, otherwise an error is returned.
+ 
+ @code
+ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+ @endcode
+ 
  The database is opened for reading and writing, and is created if it does not already exist. This is the behavior that is always used for @c open  method.
  
  @param vfsName   If vfs is given the value is passed to the vfs parameter of sqlite3_open_v2.
@@ -325,9 +325,9 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
  This will confirm whether:
  
  - is database open
-
+ 
  - if open, it will try a simple @c SELECT statement and confirm that it succeeds.
-
+ 
  @return @c YES if everything succeeds, @c NO on failure.
  */
 
@@ -341,15 +341,15 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 /** Execute single update statement
  
  This method executes a single SQL update statement (i.e. any SQL that does not return results, such as @c UPDATE , @c INSERT , or @c DELETE . This method employs [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html), [`sqlite3_bind`](https://sqlite.org/c3ref/bind_blob.html) to bind values to `?` placeholders in the SQL with the optional list of parameters, and [`sqlite_step`](https://sqlite.org/c3ref/step.html) to perform the update.
-
+ 
  The optional values provided to this method should be objects (e.g. @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects), not fundamental data types (e.g. @c int , @c long , @c NSInteger , etc.). This method automatically handles the aforementioned object types, and all other object types will be interpreted as text values using the object's @c description  method.
-
+ 
  @param sql The SQL to be performed, with optional `?` placeholders. This can be followed by iptional parameters to bind to `?` placeholders in the SQL statement. These should be Objective-C objects (e.g. @c NSString , @c NSNumber , etc.), not fundamental C data types (e.g. @c int , etc.).
  
  @param outErr A reference to the @c NSError  pointer to be updated with an auto released @c NSError  object if an error if an error occurs. If @c nil , no @c NSError  object will be returned.
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see lastError
  @see lastErrorCode
  @see lastErrorMessage
@@ -368,13 +368,13 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 - (BOOL)update:(NSString*)sql withErrorAndBindings:(NSError * _Nullable __autoreleasing *)outErr, ...  __deprecated_msg("Use executeUpdate:withErrorAndBindings: instead");;
 
 /** Execute single update statement
-
+ 
  This method executes a single SQL update statement (i.e. any SQL that does not return results, such as @c UPDATE , @c INSERT , or @c DELETE . This method employs [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html), [`sqlite3_bind`](https://sqlite.org/c3ref/bind_blob.html) to bind values to `?` placeholders in the SQL with the optional list of parameters, and [`sqlite_step`](https://sqlite.org/c3ref/step.html) to perform the update.
-
+ 
  The optional values provided to this method should be objects (e.g. @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects), not fundamental data types (e.g. @c int , @c long , @c NSInteger , etc.). This method automatically handles the aforementioned object types, and all other object types will be interpreted as text values using the object's @c description  method.
  
  @param sql The SQL to be performed, with optional `?` placeholders, followed by optional parameters to bind to `?` placeholders in the SQL statement. These should be Objective-C objects (e.g. @c NSString , @c NSNumber , etc.), not fundamental C data types (e.g. @c int , etc.).
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see lastError
@@ -390,30 +390,30 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 - (BOOL)executeUpdate:(NSString*)sql, ...;
 
 /** Execute single update statement
-
+ 
  This method executes a single SQL update statement (i.e. any SQL that does not return results, such as @c UPDATE , @c INSERT , or @c DELETE . This method employs [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html) and [`sqlite_step`](https://sqlite.org/c3ref/step.html) to perform the update. Unlike the other @c executeUpdate methods, this uses printf-style formatters (e.g. `%s`, `%d`, etc.) to build the SQL. Do not use `?` placeholders in the SQL if you use this method.
-
+ 
  @param format The SQL to be performed, with `printf`-style escape sequences, followed by optional parameters to bind to use in conjunction with the `printf`-style escape sequences in the SQL statement.
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see executeUpdate:
  @see lastError
  @see lastErrorCode
  @see lastErrorMessage
  
  @note This method does not technically perform a traditional printf-style replacement. What this method actually does is replace the printf-style percent sequences with a SQLite `?` placeholder, and then bind values to that placeholder. Thus the following command
-
-@code
-[db executeUpdateWithFormat:@"INSERT INTO test (name) VALUES (%@)", @"Gus"];
-@endcode
-
+ 
+ @code
+ [db executeUpdateWithFormat:@"INSERT INTO test (name) VALUES (%@)", @"Gus"];
+ @endcode
+ 
  is actually replacing the `%@` with `?` placeholder, and then performing something equivalent to `<executeUpdate:>`
-
-@code
-[db executeUpdate:@"INSERT INTO test (name) VALUES (?)", @"Gus"];
-@endcode
-
+ 
+ @code
+ [db executeUpdate:@"INSERT INTO test (name) VALUES (?)", @"Gus"];
+ @endcode
+ 
  There are two reasons why this distinction is important. First, the printf-style escape sequences can only be used where it is permissible to use a SQLite `?` placeholder. You can use it only for values in SQL statements, but not for table names or column names or any other non-value context. This method also cannot be used in conjunction with `pragma` statements and the like. Second, note the lack of quotation marks in the SQL. The `VALUES` clause was _not_ `VALUES ('%@')` (like you might have to do if you built a SQL statement using @c NSString  method @c stringWithFormat ), but rather simply `VALUES (%@)`.
  */
 
@@ -446,19 +446,19 @@ SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
  The optional values provided to this method should be objects (e.g. @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects), not fundamental data types (e.g. @c int , @c long , @c NSInteger , etc.). This method automatically handles the aforementioned object types, and all other object types will be interpreted as text values using the object's @c description  method.
  
  This is similar to @c executeUpdate:withArgumentsInArray: , except that this also accepts a pointer to a @c NSError  pointer, so that errors can be returned.
-
+ 
  In Swift, this throws errors, as if it were defined as follows:
  
-@code
-func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
-@endcode
-
+ @code
+ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
+ @endcode
+ 
  @param sql The SQL to be performed, with optional `?` placeholders.
  
  @param values A @c NSArray  of objects to be used when binding values to the `?` placeholders in the SQL statement.
-
+ 
  @param error A @c NSError  object to receive any error object (if any).
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see lastError
@@ -470,37 +470,37 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)executeUpdate:(NSString*)sql values:(NSArray * _Nullable)values error:(NSError * _Nullable __autoreleasing *)error;
 
 /** Execute single update statement
-
+ 
  This method executes a single SQL update statement (i.e. any SQL that does not return results, such as @c UPDATE , @c INSERT , or @c DELETE . This method employs [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html) and [`sqlite_step`](https://sqlite.org/c3ref/step.html) to perform the update. Unlike the other @c executeUpdate methods, this uses printf-style formatters (e.g. `%s`, `%d`, etc.) to build the SQL.
-
+ 
  The optional values provided to this method should be objects (e.g. @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects), not fundamental data types (e.g. @c int , @c long , @c NSInteger , etc.). This method automatically handles the aforementioned object types, and all other object types will be interpreted as text values using the object's @c description  method.
-
+ 
  @param sql The SQL to be performed, with optional `?` placeholders.
-
+ 
  @param arguments A @c NSDictionary of objects keyed by column names that will be used when binding values to the `?` placeholders in the SQL statement.
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see lastError
  @see lastErrorCode
  @see lastErrorMessage
-*/
+ */
 
 - (BOOL)executeUpdate:(NSString*)sql withParameterDictionary:(NSDictionary *)arguments;
 
 
 /** Execute single update statement
-
+ 
  This method executes a single SQL update statement (i.e. any SQL that does not return results, such as @c UPDATE , @c INSERT , or @c DELETE . This method employs [`sqlite3_prepare_v2`](https://sqlite.org/c3ref/prepare.html) and [`sqlite_step`](https://sqlite.org/c3ref/step.html) to perform the update. Unlike the other @c executeUpdate methods, this uses printf-style formatters (e.g. `%s`, `%d`, etc.) to build the SQL.
-
+ 
  The optional values provided to this method should be objects (e.g. @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects), not fundamental data types (e.g. @c int , @c long , @c NSInteger , etc.). This method automatically handles the aforementioned object types, and all other object types will be interpreted as text values using the object's @c description  method.
-
+ 
  @param sql The SQL to be performed, with optional `?` placeholders.
-
+ 
  @param args A `va_list` of arguments.
-
+ 
  @return @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see lastError
  @see lastErrorCode
  @see lastErrorMessage
@@ -511,14 +511,14 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Execute multiple SQL statements
  
  This executes a series of SQL statements that are combined in a single string (e.g. the SQL generated by the `sqlite3` command line `.dump` command). This accepts no value parameters, but rather simply expects a single string with multiple SQL statements, each terminated with a semicolon. This uses @c sqlite3_exec .
-
+ 
  @param  sql  The SQL to be performed
  
  @return      @c YES upon success; @c NO upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see executeStatements:withResultBlock:
  @see [sqlite3_exec()](https://sqlite.org/c3ref/exec.html)
-
+ 
  */
 
 - (BOOL)executeStatements:(NSString *)sql;
@@ -526,19 +526,19 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Execute multiple SQL statements with callback handler
  
  This executes a series of SQL statements that are combined in a single string (e.g. the SQL generated by the `sqlite3` command line `.dump` command). This accepts no value parameters, but rather simply expects a single string with multiple SQL statements, each terminated with a semicolon. This uses `sqlite3_exec`.
-
+ 
  @param sql       The SQL to be performed.
- @param block     A block that will be called for any result sets returned by any SQL statements. 
-                  Note, if you supply this block, it must return integer value, zero upon success (this would be a good opportunity to use @c SQLITE_OK ),
-                  non-zero value upon failure (which will stop the bulk execution of the SQL).  If a statement returns values, the block will be called with the results from the query in NSDictionary *resultsDictionary.
-                  This may be @c nil  if you don't care to receive any results.
-
+ @param block     A block that will be called for any result sets returned by any SQL statements.
+ Note, if you supply this block, it must return integer value, zero upon success (this would be a good opportunity to use @c SQLITE_OK ),
+ non-zero value upon failure (which will stop the bulk execution of the SQL).  If a statement returns values, the block will be called with the results from the query in NSDictionary *resultsDictionary.
+ This may be @c nil  if you don't care to receive any results.
+ 
  @return          @c YES upon success; @c NO upon failure. If failed, you can call @c lastError ,
-                  @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
+ @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see executeStatements:
  @see [sqlite3_exec()](https://sqlite.org/c3ref/exec.html)
-
+ 
  */
 
 - (BOOL)executeStatements:(NSString *)sql withResultBlock:(__attribute__((noescape)) FMDBExecuteStatementsCallbackBlock _Nullable)block;
@@ -552,7 +552,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
  @return The rowid of the last inserted row.
  
  @see [sqlite3_last_insert_rowid()](https://sqlite.org/c3ref/last_insert_rowid.html)
-
+ 
  */
 
 @property (nonatomic, readonly) int64_t lastInsertRowId;
@@ -575,15 +575,15 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 ///-------------------------
 
 /** Execute select statement
-
+ 
  Executing queries returns an @c FMResultSet  object if successful, and @c nil  upon failure.  Like executing updates, there is a variant that accepts an `NSError **` parameter.  Otherwise you should use the @c lastErrorMessage  and @c lastErrorMessage  methods to determine why a query failed.
  
  In order to iterate through the results of your query, you use a `while()` loop.  You also need to "step" (via `<[FMResultSet next]>`) from one record to the other.
  
  This method employs [`sqlite3_bind`](https://sqlite.org/c3ref/bind_blob.html) for any optional value parameters. This  properly escapes any characters that need escape sequences (e.g. quotation marks), which eliminates simple SQL errors as well as protects against SQL injection attacks. This method natively handles @c NSString , @c NSNumber , @c NSNull , @c NSDate , and @c NSData  objects. All other object types will be interpreted as text values using the object's @c description  method.
-
+ 
  @param sql The SELECT statement to be performed, with optional `?` placeholders, followed by optional parameters to bind to `?` placeholders in the SQL statement. These should be Objective-C objects (e.g. @c NSString , @c NSNumber , etc.), not fundamental C data types (e.g. @c int , etc.).
-
+ 
  @return A @c FMResultSet  for the result set upon success; @c nil  upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see FMResultSet
@@ -596,31 +596,31 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (FMResultSet * _Nullable)executeQuery:(NSString*)sql, ...;
 
 /** Execute select statement
-
+ 
  Executing queries returns an @c FMResultSet  object if successful, and @c nil  upon failure.  Like executing updates, there is a variant that accepts an `NSError **` parameter.  Otherwise you should use the @c lastErrorMessage  and @c lastErrorMessage  methods to determine why a query failed.
  
  In order to iterate through the results of your query, you use a `while()` loop.  You also need to "step" (via `<[FMResultSet next]>`) from one record to the other.
  
  @param format The SQL to be performed, with `printf`-style escape sequences, followed by ptional parameters to bind to use in conjunction with the `printf`-style escape sequences in the SQL statement.
-
+ 
  @return A @c FMResultSet  for the result set upon success; @c nil  upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see executeQuery:
  @see FMResultSet
  @see [`FMResultSet next`](<[FMResultSet next]>)
-
+ 
  @note This method does not technically perform a traditional printf-style replacement. What this method actually does is replace the printf-style percent sequences with a SQLite `?` placeholder, and then bind values to that placeholder. Thus the following command
  
-@code
-[db executeQueryWithFormat:@"SELECT * FROM test WHERE name=%@", @"Gus"];
-@endcode
-
+ @code
+ [db executeQueryWithFormat:@"SELECT * FROM test WHERE name=%@", @"Gus"];
+ @endcode
+ 
  is actually replacing the `%@` with `?` placeholder, and then performing something equivalent to `<executeQuery:>`
-
-@code
-[db executeQuery:@"SELECT * FROM test WHERE name=?", @"Gus"];
-@endcode
-
+ 
+ @code
+ [db executeQuery:@"SELECT * FROM test WHERE name=?", @"Gus"];
+ @endcode
+ 
  There are two reasons why this distinction is important. First, the printf-style escape sequences can only be used where it is permissible to use a SQLite `?` placeholder. You can use it only for values in SQL statements, but not for table names or column names or any other non-value context. This method also cannot be used in conjunction with `pragma` statements and the like. Second, note the lack of quotation marks in the SQL. The @c WHERE  clause was _not_ `WHERE name='%@'` (like you might have to do if you built a SQL statement using @c NSString  method @c stringWithFormat ), but rather simply `WHERE name=%@`.
  
  */
@@ -628,17 +628,17 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (FMResultSet * _Nullable)executeQueryWithFormat:(NSString*)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /** Execute select statement
-
+ 
  Executing queries returns an @c FMResultSet  object if successful, and @c nil  upon failure.  Like executing updates, there is a variant that accepts an `NSError **` parameter.  Otherwise you should use the @c lastErrorMessage  and @c lastErrorMessage  methods to determine why a query failed.
  
  In order to iterate through the results of your query, you use a `while()` loop.  You also need to "step" (via `<[FMResultSet next]>`) from one record to the other.
  
  @param sql The SELECT statement to be performed, with optional `?` placeholders.
-
+ 
  @param arguments A @c NSArray  of objects to be used when binding values to the `?` placeholders in the SQL statement.
-
+ 
  @return A @c FMResultSet  for the result set upon success; @c nil  upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see -executeQuery:values:error:
  @see FMResultSet
  @see [`FMResultSet next`](<[FMResultSet next]>)
@@ -657,36 +657,36 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
  In Swift, this throws errors, as if it were defined as follows:
  
  `func executeQuery(sql: String, values: [Any]?) throws  -> FMResultSet!`
-
+ 
  @param sql The SELECT statement to be performed, with optional `?` placeholders.
  
  @param values A @c NSArray  of objects to be used when binding values to the `?` placeholders in the SQL statement.
-
+ 
  @param error A @c NSError  object to receive any error object (if any).
-
+ 
  @return A @c FMResultSet  for the result set upon success; @c nil  upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see FMResultSet
  @see [`FMResultSet next`](<[FMResultSet next]>)
  
  @note When called from Swift, only use the first two parameters, `sql` and `values`. This but throws the error.
-
+ 
  */
 
 - (FMResultSet * _Nullable)executeQuery:(NSString *)sql values:(NSArray * _Nullable)values error:(NSError * _Nullable __autoreleasing *)error;
 
 /** Execute select statement
-
+ 
  Executing queries returns an @c FMResultSet  object if successful, and @c nil  upon failure.  Like executing updates, there is a variant that accepts an `NSError **` parameter.  Otherwise you should use the @c lastErrorMessage  and @c lastErrorMessage  methods to determine why a query failed.
  
  In order to iterate through the results of your query, you use a `while()` loop.  You also need to "step" (via `<[FMResultSet next]>`) from one record to the other.
  
  @param sql The SELECT statement to be performed, with optional `?` placeholders.
-
+ 
  @param arguments A @c NSDictionary of objects keyed by column names that will be used when binding values to the `?` placeholders in the SQL statement.
-
+ 
  @return A @c FMResultSet  for the result set upon success; @c nil  upon failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see FMResultSet
  @see [`FMResultSet next`](<[FMResultSet next]>)
  */
@@ -717,13 +717,13 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
  @see isInTransaction
  
  @warning    Unlike SQLite's `BEGIN TRANSACTION`, this method currently performs
-             an exclusive transaction, not a deferred transaction. This behavior
-             is likely to change in future versions of FMDB, whereby this method
-             will likely eventually adopt standard SQLite behavior and perform
-             deferred transactions. If you really need exclusive tranaction, it is
-             recommended that you use @c beginExclusiveTransaction, instead, not
-             only to make your intent explicit, but also to future-proof your code.
-
+ an exclusive transaction, not a deferred transaction. This behavior
+ is likely to change in future versions of FMDB, whereby this method
+ will likely eventually adopt standard SQLite behavior and perform
+ deferred transactions. If you really need exclusive tranaction, it is
+ recommended that you use @c beginExclusiveTransaction, instead, not
+ only to make your intent explicit, but also to future-proof your code.
+ 
  */
 
 - (BOOL)beginTransaction;
@@ -765,7 +765,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)beginExclusiveTransaction;
 
 /** Commit a transaction
-
+ 
  Commit a transaction that was initiated with either `<beginTransaction>` or with `<beginDeferredTransaction>`.
  
  @return @c YES on success; @c NO on failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
@@ -779,9 +779,9 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)commit;
 
 /** Rollback a transaction
-
+ 
  Rollback a transaction that was initiated with either `<beginTransaction>` or with `<beginDeferredTransaction>`.
-
+ 
  @return @c YES on success; @c NO on failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
  
  @see beginTransaction
@@ -793,7 +793,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)rollback;
 
 /** Identify whether currently in a transaction or not
-  
+ 
  @see beginTransaction
  @see beginDeferredTransaction
  @see commit
@@ -825,7 +825,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 @property (nonatomic, readonly) BOOL hasOpenResultSets;
 
 /** Whether should cache statements or not
-  */
+ */
 
 @property (nonatomic) BOOL shouldCacheStatements;
 
@@ -846,9 +846,9 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Set encryption key.
  
  @param key The key to be used.
-
+ 
  @return @c YES if success, @c NO on error.
-
+ 
  @see https://www.zetetic.net/sqlcipher/
  
  @warning You need to have purchased the sqlite encryption extensions for this method to work.
@@ -857,13 +857,13 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)setKey:(NSString*)key;
 
 /** Reset encryption key
-
+ 
  @param key The key to be used.
-
+ 
  @return @c YES if success, @c NO on error.
-
+ 
  @see https://www.zetetic.net/sqlcipher/
-
+ 
  @warning You need to have purchased the sqlite encryption extensions for this method to work.
  */
 
@@ -872,9 +872,9 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Set encryption key using `keyData`.
  
  @param keyData The @c NSData  to be used.
-
+ 
  @return @c YES if success, @c NO on error.
-
+ 
  @see https://www.zetetic.net/sqlcipher/
  
  @warning You need to have purchased the sqlite encryption extensions for this method to work.
@@ -883,13 +883,13 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)setKeyWithData:(NSData *)keyData;
 
 /** Reset encryption key using `keyData`.
-
+ 
  @param keyData The @c NSData  to be used.
-
+ 
  @return @c YES if success, @c NO on error.
-
+ 
  @see https://www.zetetic.net/sqlcipher/
-
+ 
  @warning You need to have purchased the sqlite encryption extensions for this method to work.
  */
 
@@ -926,7 +926,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Last error message
  
  Returns the English-language text that describes the most recent failed SQLite API call associated with a database connection. If a prior API call failed but the most recent API call succeeded, this return value is undefined.
-
+ 
  @return @c NSString  of the last error message.
  
  @see [sqlite3_errmsg()](https://sqlite.org/c3ref/errcode.html)
@@ -968,7 +968,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (int)lastExtendedErrorCode;
 
 /** Had error
-
+ 
  @return @c YES if there was an error, @c NO if no error.
  
  @see lastError
@@ -980,7 +980,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)hadError;
 
 /** Last error
-
+ 
  @return @c NSError  representing the last error.
  
  @see lastErrorCode
@@ -1014,13 +1014,13 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)startSavePointWithName:(NSString*)name error:(NSError * _Nullable __autoreleasing *)outErr;
 
 /** Release save point
-
+ 
  @param name Name of save point.
  
  @param outErr A @c NSError  object to receive any error object (if any).
  
  @return @c YES on success; @c NO on failure. If failed, you can call @c lastError , @c lastErrorCode , or @c lastErrorMessage  for diagnostic information regarding the failure.
-
+ 
  @see startSavePointWithName:error:
  @see rollbackToSavePointWithName:error:
  
@@ -1029,7 +1029,7 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)releaseSavePointWithName:(NSString*)name error:(NSError * _Nullable __autoreleasing *)outErr;
 
 /** Roll back to save point
-
+ 
  @param name Name of save point.
  @param outErr A @c NSError  object to receive any error object (if any).
  
@@ -1043,11 +1043,11 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 - (BOOL)rollbackToSavePointWithName:(NSString*)name error:(NSError * _Nullable __autoreleasing *)outErr;
 
 /** Start save point
-
+ 
  @param block Block of code to perform from within save point.
  
  @return The NSError corresponding to the error, if any. If no error, returns @c nil .
-
+ 
  @see startSavePointWithName:error:
  @see releaseSavePointWithName:error:
  @see rollbackToSavePointWithName:error:
@@ -1094,23 +1094,23 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 ///----------------------------
 
 /** Test to see if the library is threadsafe
-
+ 
  @return @c NO if and only if SQLite was compiled with mutexing code omitted due to the @c SQLITE_THREADSAFE compile-time option being set to 0.
-
+ 
  @see [sqlite3_threadsafe()](https://sqlite.org/c3ref/threadsafe.html)
  */
 
 + (BOOL)isSQLiteThreadSafe;
 
 /** Examine/set limits
-
+ 
  @param type The type of limit. See https://sqlite.org/c3ref/c_limit_attached.html
  @param newLimit The new limit value. Use -1 if you don't want to change the limit, but rather only want to check it.
-
+ 
  @return Regardless, returns previous value.
-
+ 
  @see [sqlite3_limit()](https://sqlite.org/c3ref/limit.html)
-*/
+ */
 
 - (int)limitFor:(int)type value:(int)newLimit;
 
@@ -1136,19 +1136,19 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 + (NSString*)FMDBUserVersion;
 
 /** The FMDB version
-
+ 
  This returns the FMDB as hexadecimal value, e.g., @c 0x0243 for version 2.4.3.
-
+ 
  @warning This routine will not work if any component of the version number exceeds 15.
-       For example, if it is version @c 2.17.3 , this will max out at @c 0x2f3.
-       For this reason, we would recommend using @c FMDBUserVersion  and with @c NSNumericSearch  option, e.g.
-
+ For example, if it is version @c 2.17.3 , this will max out at @c 0x2f3.
+ For this reason, we would recommend using @c FMDBUserVersion  and with @c NSNumericSearch  option, e.g.
+ 
  @code
  NSComparisonResult result = [[FMDatabase FMDBUserVersion] compare:@"2.11.0" options:NSNumericSearch];
  @endcode
-
+ 
  @returns The version number in hexadecimal, e.g., @c 0x0243 for version 2.4.3. If any component exceeds what can be
-       can be represented in four bits, we'll max it out at @c 0xf .
+ can be represented in four bits, we'll max it out at @c 0xf .
  */
 
 + (SInt32)FMDBVersion __deprecated_msg("Use FMDBUserVersion instead");
@@ -1160,33 +1160,33 @@ func executeUpdate(sql: String, values: [Any]?) throws -> Bool { }
 /** Adds SQL functions or aggregates or to redefine the behavior of existing SQL functions or aggregates.
  
  For example:
-
-@code
-[db makeFunctionNamed:@"RemoveDiacritics" arguments:1 block:^(void *context, int argc, void **argv) {
-    SqliteValueType type = [self.db valueType:argv[0]];
-    if (type == SqliteValueTypeNull) {
-        [self.db resultNullInContext:context];
-         return;
-    }
-    if (type != SqliteValueTypeText) {
-        [self.db resultError:@"Expected text" context:context];
-        return;
-    }
-    NSString *string = [self.db valueString:argv[0]];
-    NSString *result = [string stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
-    [self.db resultString:result context:context];
-}];
-
-FMResultSet *rs = [db executeQuery:@"SELECT * FROM employees WHERE RemoveDiacritics(first_name) LIKE 'jose'"];
-NSAssert(rs, @"Error %@", [db lastErrorMessage]);
-@endcode
-
+ 
+ @code
+ [db makeFunctionNamed:@"RemoveDiacritics" arguments:1 block:^(void *context, int argc, void **argv) {
+ SqliteValueType type = [self.db valueType:argv[0]];
+ if (type == SqliteValueTypeNull) {
+ [self.db resultNullInContext:context];
+ return;
+ }
+ if (type != SqliteValueTypeText) {
+ [self.db resultError:@"Expected text" context:context];
+ return;
+ }
+ NSString *string = [self.db valueString:argv[0]];
+ NSString *result = [string stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
+ [self.db resultString:result context:context];
+ }];
+ 
+ FMResultSet *rs = [db executeQuery:@"SELECT * FROM employees WHERE RemoveDiacritics(first_name) LIKE 'jose'"];
+ NSAssert(rs, @"Error %@", [db lastErrorMessage]);
+ @endcode
+ 
  @param name Name of function.
-
+ 
  @param arguments Maximum number of parameters.
-
+ 
  @param block The block of code for the function.
-
+ 
  @see [sqlite3_create_function()](https://sqlite.org/c3ref/create_function.html)
  */
 
@@ -1352,11 +1352,11 @@ NSAssert(rs, @"Error %@", [db lastErrorMessage]);
  Use this method to generate values to set the dateFormat property.
  
  Example:
-
-@code
-myDB.dateFormat = [FMDatabase storeableDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-@endcode
-
+ 
+ @code
+ myDB.dateFormat = [FMDatabase storeableDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+ @endcode
+ 
  @param format A valid NSDateFormatter format string.
  
  @return A @c NSDateFormatter  that can be used for converting dates to strings and vice versa.
@@ -1366,9 +1366,9 @@ myDB.dateFormat = [FMDatabase storeableDateFormat:@"yyyy-MM-dd HH:mm:ss"];
  @see dateFromString:
  @see stringFromDate:
  @see storeableDateFormat:
-
+ 
  @warning Note that @c NSDateFormatter  is not thread-safe, so the formatter generated by this method should be assigned to only one FMDB instance and should not be used for other purposes.
-
+ 
  */
 
 + (NSDateFormatter *)storeableDateFormat:(NSString *)format;
@@ -1419,7 +1419,7 @@ myDB.dateFormat = [FMDatabase storeableDateFormat:@"yyyy-MM-dd HH:mm:ss"];
 /** Convert the supplied NSDate to NSString, using the current database formatter.
  
  @param date @c NSDate  of date to convert to @c NSString .
-
+ 
  @return The @c NSString  representation of the date; @c nil  if no formatter is set.
  
  @see hasDateFormatter
@@ -1440,7 +1440,7 @@ myDB.dateFormat = [FMDatabase storeableDateFormat:@"yyyy-MM-dd HH:mm:ss"];
  
  See also
  
- - @c FMDatabase 
+ - @c FMDatabase
  - @c FMResultSet
  - [@c sqlite3_stmt ](https://sqlite.org/c3ref/stmt.html)
  */
