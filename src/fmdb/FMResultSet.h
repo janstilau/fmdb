@@ -36,6 +36,7 @@ typedef NS_ENUM(int, SqliteValueType) {
 
 @interface FMResultSet : NSObject
 
+// 这个值, 其实没有太大的作用. 主要是用到了错误处理里面.
 @property (nonatomic, retain, nullable) FMDatabase *parentDB;
 
 ///-----------------
@@ -43,7 +44,8 @@ typedef NS_ENUM(int, SqliteValueType) {
 ///-----------------
 
 /** Executed query */
-
+// 就像, Response 里面, 应该存储 Request 的信息一样 .
+// Result 应该存储 Query 的信息. 
 @property (atomic, retain, nullable) NSString *query;
 
 /** `NSMutableDictionary` mapping column names to numeric index */

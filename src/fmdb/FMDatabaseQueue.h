@@ -11,59 +11,64 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/** To perform queries and updates on multiple threads, you'll want to use @c FMDatabaseQueue .
-
- Using a single instance of @c FMDatabase from multiple threads at once is a bad idea.  It has always been OK to make a @c FMDatabase  object *per thread*.  Just don't share a single instance across threads, and definitely not across multiple threads at the same time.
-
+/* To perform queries and updates on multiple threads, you'll want to use @c FMDatabaseQueue .
+ 
+ Using a single instance of @c FMDatabase from multiple threads at once is a bad idea.
+ It has always been OK to make a @c FMDatabase  object *per thread*.  Just don't share a single instance across threads, and definitely not across multiple threads at the same time.
+ 
  Instead, use @c FMDatabaseQueue . Here's how to use it:
-
+ 
  First, make your queue.
-
-@code
-FMDatabaseQueue *queue = [FMDatabaseQueue databaseQueueWithPath:aPath];
-@endcode
-
+ 
+ @code
+ FMDatabaseQueue *queue = [FMDatabaseQueue databaseQueueWithPath:aPath];
+ @endcode
+ 
  Then use it like so:
 
-@code
-[queue inDatabase:^(FMDatabase *db) {
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:1]];
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:2]];
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:3]];
-
-    FMResultSet *rs = [db executeQuery:@"select * from foo"];
-    while ([rs next]) {
-        //…
-    }
-}];
-@endcode
-
+ 所有的对于 DB 的操作. 都是使用 Block 的方式来提交的.
+ DB 是由 queue 负责创建和传递过来的.
+ @code
+ [queue inDatabase:^(FMDatabase *db) {
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:1]];
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:2]];
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:3]];
+ 
+ 同样的, 各种取值操作, 其实也应该在 Block 里面执行了.
+ 因为, inDatabase 是一个 sync 的操作, 所以, 可以在里面进行返回值的确定.
+ FMResultSet *rs = [db executeQuery:@"select * from foo"];
+ while ([rs next]) {
+ //…
+ }
+ }];
+ @endcode
+ 
  An easy way to wrap things up in a transaction can be done like this:
-
-@code
-[queue inTransaction:^(FMDatabase *db, BOOL *rollback) {
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:1]];
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:2]];
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:3]];
-
-    // if (whoopsSomethingWrongHappened) {
-    //     *rollback = YES;
-    //     return;
-    // }
-
-    // etc…
-    [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:4]];
-}];
-@endcode
-
+ 
+ @code
+ [queue inTransaction:^(FMDatabase *db, BOOL *rollback) {
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:1]];
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:2]];
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:3]];
+ 
+ // if (whoopsSomethingWrongHappened) {
+ //     *rollback = YES;
+ //     return;
+ // }
+ 
+ // etc…
+ [db executeUpdate:@"INSERT INTO myTable VALUES (?)", [NSNumber numberWithInt:4]];
+ }];
+ @endcode
+ 
  @c FMDatabaseQueue will run the blocks on a serialized queue (hence the name of the class).  So if you call @c FMDatabaseQueue 's methods from multiple threads at the same time, they will be executed in the order they are received.  This way queries and updates won't step on each other's toes, and every one is happy.
-
+ 
  @warning Do not instantiate a single @c FMDatabase  object and use it across multiple threads. Use @c FMDatabaseQueue  instead.
  
  @warning The calls to @c FMDatabaseQueue 's methods are blocking.  So even though you are passing along blocks, they will **not** be run on another thread.
-
+ 
  @sa FMDatabase
-
+ 
  */
 
 @interface FMDatabaseQueue : NSObject
@@ -203,44 +208,44 @@ FMDatabaseQueue *queue = [FMDatabaseQueue databaseQueueWithPath:aPath];
 
 /** Synchronously perform database operations on queue.
  
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  */
 
 - (void)inDatabase:(__attribute__((noescape)) void (^)(FMDatabase *db))block;
 
 /** Synchronously perform database operations on queue, using transactions.
-
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  
  @warning    Unlike SQLite's `BEGIN TRANSACTION`, this method currently performs
-             an exclusive transaction, not a deferred transaction. This behavior
-             is likely to change in future versions of FMDB, whereby this method
-             will likely eventually adopt standard SQLite behavior and perform
-             deferred transactions. If you really need exclusive tranaction, it is
-             recommended that you use `inExclusiveTransaction`, instead, not only
-             to make your intent explicit, but also to future-proof your code.
-
+ an exclusive transaction, not a deferred transaction. This behavior
+ is likely to change in future versions of FMDB, whereby this method
+ will likely eventually adopt standard SQLite behavior and perform
+ deferred transactions. If you really need exclusive tranaction, it is
+ recommended that you use `inExclusiveTransaction`, instead, not only
+ to make your intent explicit, but also to future-proof your code.
+ 
  */
 
 - (void)inTransaction:(__attribute__((noescape)) void (^)(FMDatabase *db, BOOL *rollback))block;
 
 /** Synchronously perform database operations on queue, using deferred transactions.
  
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  */
 
 - (void)inDeferredTransaction:(__attribute__((noescape)) void (^)(FMDatabase *db, BOOL *rollback))block;
 
 /** Synchronously perform database operations on queue, using exclusive transactions.
  
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  */
 
 - (void)inExclusiveTransaction:(__attribute__((noescape)) void (^)(FMDatabase *db, BOOL *rollback))block;
 
 /** Synchronously perform database operations on queue, using immediate transactions.
-
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  */
 
 - (void)inImmediateTransaction:(__attribute__((noescape)) void (^)(FMDatabase *db, BOOL *rollback))block;
@@ -250,8 +255,8 @@ FMDatabaseQueue *queue = [FMDatabaseQueue databaseQueueWithPath:aPath];
 ///-----------------------------------------------
 
 /** Synchronously perform database operations using save point.
-
- @param block The code to be run on the queue of @c FMDatabaseQueue 
+ 
+ @param block The code to be run on the queue of @c FMDatabaseQueue
  */
 
 // NOTE: you can not nest these, since calling it will pull another database out of the pool and you'll get a deadlock.

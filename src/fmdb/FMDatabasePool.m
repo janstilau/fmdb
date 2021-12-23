@@ -35,6 +35,7 @@ typedef NS_ENUM(NSInteger, FMDBTransaction) {
 
 
 @implementation FMDatabasePool
+
 @synthesize path=_path;
 @synthesize delegate=_delegate;
 @synthesize maximumNumberOfDatabasesToCreate=_maximumNumberOfDatabasesToCreate;

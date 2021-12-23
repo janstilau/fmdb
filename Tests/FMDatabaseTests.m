@@ -97,7 +97,7 @@
 - (void)testFailOnOpenWithUnknownVFS {
     FMDatabase *db = [[FMDatabase alloc] initWithPath:@":memory:"];
     [db openWithFlags:SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE vfs:@"UnknownVFS"];
-    XCTAssertTrue([db hadError], @"Should have failed");    
+    XCTAssertTrue([db hadError], @"Should have failed");
 }
 
 - (void)testFailOnUnopenedDatabase {
@@ -191,7 +191,7 @@
     XCTAssertNotNil(rs, @"Should have a non-nil result set");
     
     NSString *invalidColumnName = @"foobar";
-
+    
     while ([rs next]) {
         XCTAssertNil(rs[invalidColumnName], @"Invalid column name should return nil");
         XCTAssertNil([rs stringForColumn:invalidColumnName], @"Invalid column name should return nil");
@@ -257,9 +257,9 @@
     // case sensitive result dictionary test
     [self.db executeUpdate:@"create table cs (aRowName integer, bRowName text)"];
     [self.db executeUpdate:@"insert into cs (aRowName, bRowName) values (?, ?)", [NSNumber numberWithInt:1], @"hello"];
-
+    
     XCTAssertFalse([self.db hadError], @"Shouldn't have any errors");
-
+    
     FMResultSet *rs = [self.db executeQuery:@"select * from cs"];
     while ([rs next]) {
         NSDictionary *d = [rs resultDictionary];
@@ -296,7 +296,7 @@
 - (void)testNamedParametersCount
 {
     XCTAssertTrue([self.db executeUpdate:@"create table namedparamcounttest (a text, b text, c integer, d double)"]);
-
+    
     NSMutableDictionary *dictionaryArgs = [NSMutableDictionary dictionary];
     [dictionaryArgs setObject:@"Text1" forKey:@"a"];
     [dictionaryArgs setObject:@"Text2" forKey:@"b"];
@@ -800,7 +800,7 @@
         XCTAssertTrue([rs next]);
         
         XCTAssertEqualObjects([rs dateForColumnIndex:0], testDate);
-
+        
         [rs close];
     };
     
@@ -857,12 +857,12 @@
     XCTAssertFalse(success, @"'next' should have failed");
     
     XCTAssertEqualObjects(error.localizedDescription, @"Expected text");
-
+    
     rs = [self.db executeQuery:@"SELECT RemoveDiacritics('jose','ortega')"];
     XCTAssertNil(rs);
-
+    
     error = [self.db lastError];
-
+    
     XCTAssert([error.localizedDescription containsString:@"wrong number of arguments"], @"Should get wrong number of arguments error, but got '%@'", error.localizedDescription);
 }
 
@@ -903,7 +903,7 @@
     
     rs = [self.db executeQuery:@"SELECT Hypotenuse(?)", @(3.0)];
     XCTAssertNil(rs, @"Should fail for wrong number of arguments");
-
+    
     error = [self.db lastError];
     XCTAssert([error.localizedDescription containsString:@"wrong number of arguments"], @"Should get wrong number of arguments error, but got '%@'", error.localizedDescription);
 }
@@ -1094,7 +1094,7 @@
         NSString *result = [string stringByFoldingWithOptions:NSDiacriticInsensitiveSearch locale:nil];
         [self.db resultString:result context:context];
     }];
-
+    
     [self.db makeFunctionNamed:@"Hypotenuse" arguments:2 block:^(void *context, int argc, void **argv) {
         SqliteValueType type1 = [self.db valueType:argv[0]];
         SqliteValueType type2 = [self.db valueType:argv[1]];
@@ -1106,7 +1106,7 @@
         double value2 = [self.db valueDouble:argv[1]];
         [self.db resultDouble:hypot(value1, value2) context:context];
     }];
-
+    
     [self.db makeFunctionNamed:@"SetAlternatingByteToOne" arguments:1 block:^(void *context, int argc, void **argv) {
         SqliteValueType type = [self.db valueType:argv[0]];
         if (type != SqliteValueTypeBlob) {
@@ -1120,7 +1120,7 @@
         }
         [self.db resultData:data context:context];
     }];
-
+    
 }
 
 /* This is deprecated, and as such, should be excluded from tests
@@ -1128,7 +1128,7 @@
  * - (void)testVersionNumber {
  *     XCTAssertEqual([FMDatabase FMDBVersion], 0x0278); // this is going to break every time we bump it.
  * }
-  *
+ *
  */
 
 - (void)testUserVersion {
@@ -1148,22 +1148,22 @@
 
 - (void)testExecuteStatements {
     BOOL success;
-
+    
     NSString *sql = @"create table bulktest1 (id integer primary key autoincrement, x text);"
-                     "create table bulktest2 (id integer primary key autoincrement, y text);"
-                     "create table bulktest3 (id integer primary key autoincrement, z text);"
-                     "insert into bulktest1 (x) values ('XXX');"
-                     "insert into bulktest2 (y) values ('YYY');"
-                     "insert into bulktest3 (z) values ('ZZZ');";
-
+    "create table bulktest2 (id integer primary key autoincrement, y text);"
+    "create table bulktest3 (id integer primary key autoincrement, z text);"
+    "insert into bulktest1 (x) values ('XXX');"
+    "insert into bulktest2 (y) values ('YYY');"
+    "insert into bulktest3 (z) values ('ZZZ');";
+    
     success = [self.db executeStatements:sql];
-
+    
     XCTAssertTrue(success, @"bulk create");
-
+    
     sql = @"select count(*) as count from bulktest1;"
-           "select count(*) as count from bulktest2;"
-           "select count(*) as count from bulktest3;";
-
+    "select count(*) as count from bulktest2;"
+    "select count(*) as count from bulktest3;";
+    
     success = [self.db executeStatements:sql withResultBlock:^int(NSDictionary *dictionary) {
         NSInteger count = [dictionary[@"count"] integerValue];
         XCTAssertEqual(count, 1, @"expected one record for dictionary %@", dictionary);
@@ -1171,53 +1171,53 @@
     }];
     
     XCTAssertTrue(success, @"bulk select");
-
+    
     // select blob type records
     [self.db executeUpdate:@"create table bulktest4 (id integer primary key autoincrement, b blob);"];
     NSData *blobData = [[NSData alloc] initWithContentsOfFile:@"/bin/bash"];
     [self.db executeUpdate:@"insert into bulktest4 (b) values (?)" values:@[blobData] error:nil];
-
+    
     sql = @"select * from bulktest4";
     success = [self.db executeStatements:sql withResultBlock:^int(NSDictionary * _Nonnull resultsDictionary) {
         return 0;
     }];
     XCTAssertTrue(success, @"bulk select");
-
+    
     sql = @"drop table bulktest1;"
-           "drop table bulktest2;"
-           "drop table bulktest3;"
-           "drop table bulktest4";
-
+    "drop table bulktest2;"
+    "drop table bulktest3;"
+    "drop table bulktest4";
+    
     success = [self.db executeStatements:sql];
-
+    
     XCTAssertTrue(success, @"bulk drop");
 }
 
 - (void)testCharAndBoolTypes
 {
     XCTAssertTrue([self.db executeUpdate:@"create table charBoolTest (a, b, c)"]);
-
+    
     BOOL success = [self.db executeUpdate:@"insert into charBoolTest values (?, ?, ?)", @YES, @NO, @('x')];
     XCTAssertTrue(success, @"Unable to insert values");
-
+    
     FMResultSet *rs = [self.db executeQuery:@"select * from charBoolTest"];
     XCTAssertNotNil(rs);
-
+    
     XCTAssertTrue([rs next], @"Did not return row");
-
+    
     XCTAssertEqual([rs boolForColumn:@"a"], true);
     XCTAssertEqualObjects([rs objectForColumn:@"a"], @YES);
-
+    
     XCTAssertEqual([rs boolForColumn:@"b"], false);
     XCTAssertEqualObjects([rs objectForColumn:@"b"], @NO);
-
+    
     XCTAssertEqual([rs intForColumn:@"c"], 'x');
     XCTAssertEqualObjects([rs objectForColumn:@"c"], @('x'));
-
+    
     [rs close];
-
+    
     XCTAssertTrue([self.db executeUpdate:@"drop table charBoolTest"], @"Did not drop table");
-
+    
 }
 
 - (void)testSqliteLibVersion
@@ -1266,7 +1266,7 @@
 {
     NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
     NSString *path          = [documentsPath stringByAppendingPathComponent:@"nonexistentfolder/test.sqlite"];
-
+    
     FMDatabase *db = [[FMDatabase alloc] initWithPath:path];
     XCTAssertFalse([db open], @"open did NOT fail");
 }
@@ -1275,7 +1275,7 @@
 {
     FMDatabase *db = [[FMDatabase alloc] init];
     XCTAssert([db open], @"open failed");
-
+    
     NSTimeInterval originalInterval = db.maxBusyRetryTimeInterval;
     NSTimeInterval updatedInterval = originalInterval > 0 ? originalInterval + 1 : 1;
     
@@ -1289,7 +1289,7 @@
 {
     FMDatabase *db = [[FMDatabase alloc] init];
     // XCTAssert([db open], @"open failed");   // deliberately not opened
-
+    
     NSTimeInterval originalInterval = db.maxBusyRetryTimeInterval;
     NSTimeInterval updatedInterval = originalInterval > 0 ? originalInterval + 1 : 1;
     
@@ -1380,7 +1380,7 @@
     XCTAssert([db executeUpdate:@"insert into foo (a) values (?)" withArgumentsInArray:@[insertedValue]], @"insert failed");
     retrievedValue = @([db intForQuery:@"select a from foo where id = ?", @([db lastInsertRowId])]);
     XCTAssertEqualObjects(insertedValue, retrievedValue, @"values don't match");
-
+    
     insertedValue = [NSNumber numberWithShort:53];
     XCTAssert([db executeUpdate:@"insert into foo (a) values (?)" withArgumentsInArray:@[insertedValue]], @"insert failed");
     retrievedValue = @([db intForQuery:@"select a from foo where id = ?", @([db lastInsertRowId])]);
@@ -1430,7 +1430,7 @@
     XCTAssert([db executeUpdate:@"insert into foo (a) values (?)" withArgumentsInArray:@[insertedValue]], @"insert failed");
     retrievedValue = @([db doubleForQuery:@"select a from foo where id = ?", @([db lastInsertRowId])]);
     XCTAssertEqualObjects(insertedValue, retrievedValue, @"values don't match");
-
+    
     insertedValue = @TRUE;
     XCTAssert([db executeUpdate:@"insert into foo (a) values (?)" withArgumentsInArray:@[insertedValue]], @"insert failed");
     retrievedValue = @([db boolForQuery:@"select a from foo where id = ?", @([db lastInsertRowId])]);
@@ -1461,7 +1461,7 @@
     XCTAssert(success, @"insert failed");
     int retrievedInt = [db intForQuery:@"select a from foo where id = ?", @([db lastInsertRowId])];
     XCTAssertEqual(insertedInt, retrievedInt, @"values don't match");
-
+    
     char insertedUnsignedInt = 43;
     success = [db executeUpdateWithFormat:@"insert into foo (a) values (%u)", insertedUnsignedInt];
     XCTAssert(success, @"insert failed");
@@ -1511,7 +1511,7 @@
     XCTAssertTrue([db open], @"open failed");
     [db beginImmediateTransaction];
     [db beginImmediateTransaction];
-
+    
     // Verify that beginImmediateTransaction behaves as advertised and starts a transaction
     XCTAssertEqualObjects([db lastError].localizedDescription, @"cannot start a transaction within a transaction");
 }
@@ -1547,7 +1547,7 @@
     
     success = [db openWithFlags:SQLITE_OPEN_READWRITE];
     XCTAssert(success, @"Opening second database should now succeed");
-
+    
     // now let's try using it
     FMResultSet *rs = [db executeQuery:@"select * from foo"];
     XCTAssertNotNil(rs, @"Should successfully be able to use re-opened database");
@@ -1588,29 +1588,29 @@
     NSURL *tempURL = [NSURL fileURLWithPath:NSTemporaryDirectory()];
     NSURL *fileURL = [tempURL URLByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
     NSFileManager *manager = [NSFileManager defaultManager];
-
+    
     // ok, first create one database
-
+    
     FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
     BOOL success = [db open];
     XCTAssert(success, @"Database not created correctly for purposes of test");
     success = [db executeUpdate:@"CREATE TABLE IF NOT EXISTS foo (bar BLOB)"];
     XCTAssert(success, @"Table created correctly for purposes of test");
-
+    
     long value = 42;
     success = [self utility1ForTestTransient:db withValue:value];
     XCTAssert(success, @"INSERT failed");
-
+    
     FMResultSet *rs = [self utility2ForTestTransient:db withValue:value];
     XCTAssert(rs, @"Creating SELECT failed");
-
+    
     // the following is the key test, namely if FMDB uses SQLITE_STATIC, the following may fail, but SQLITE_TRANSIENT ensures it will succeed
-
+    
     success = [self utility3ForTestTransient:rs withValue:value];
     XCTAssert(success, @"Performing SELECT failed");
-
+    
     // let's clean up
-
+    
     [rs close];
     [db close];
     [manager removeItemAtURL:fileURL error:nil];
@@ -1620,23 +1620,23 @@
     NSURL *tempURL = [NSURL fileURLWithPath:NSTemporaryDirectory()];
     NSURL *fileURL = [tempURL URLByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
     NSFileManager *manager = [NSFileManager defaultManager];
-
+    
     // ok, first create one database
-
+    
     FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
     BOOL success = [db open];
     XCTAssert(success, @"Database not created correctly for purposes of test");
     success = [db executeUpdate:@"CREATE TABLE IF NOT EXISTS foo (bar BLOB)"];
     XCTAssert(success, @"Table created correctly for purposes of test");
-
+    
     NSUInteger limit = (NSUInteger)[db limitFor:SQLITE_LIMIT_LENGTH value:-1] + 1;
     NSLog(@"%lu", (unsigned long)limit);
     NSData *data = [NSMutableData dataWithLength:limit];
     success = [db executeUpdate:@"INSERT INTO foo (bar) VALUES (?)", data];
     XCTAssertFalse(success, @"Table created correctly for purposes of test");
-
+    
     // let's clean up
-
+    
     [db close];
     [manager removeItemAtURL:fileURL error:nil];
 }
@@ -1646,46 +1646,46 @@
     NSURL *fileURL = [tempURL URLByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
     NSFileManager *manager = [NSFileManager defaultManager];
     [manager removeItemAtURL:fileURL error:nil];
-
+    
     // ok, first create one database
-
+    
     FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
     BOOL success = [db open];
     XCTAssert(success, @"Database not created correctly for purposes of test");
     success = [db executeUpdate:@"CREATE TABLE IF NOT EXISTS foo (id INTEGER PRIMARY KEY, bar TEXT)"];
     XCTAssert(success, @"Table created correctly for purposes of test");
-
+    
     FMResultSet *rs = [db prepare:@"INSERT INTO foo (bar) VALUES (:bar)"];
     XCTAssert(rs, @"INSERT statement not prepared %@", [db lastErrorMessage]);
-
+    
     NSString *value1 = @"foo";
     XCTAssert([rs bindWithDictionary:@{@"bar": value1}], @"Unable to bind");
     XCTAssert([rs step], @"Performing query failed");
-
+    
     NSString *value2 = @"bar";
     XCTAssert([rs bindWithDictionary:@{@"bar": value2}], @"Unable to bind");
     XCTAssert([rs step], @"Performing query failed");
-
+    
     XCTAssert([rs bindWithDictionary:@{@"bar": value2}], @"Unable to bind");
     XCTAssert([rs step], @"Performing query failed");
-
+    
     [rs close];
-
+    
     rs = [db prepare:@"SELECT bar FROM foo WHERE bar = :bar"];
     XCTAssert([rs bindWithDictionary:@{@"bar": value1}], @"Unable to bind");
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value1);
     XCTAssertFalse([rs next], @"There should have been only one record");
-
+    
     XCTAssert([rs bindWithDictionary:@{@"bar": value2}], @"Unable to bind");
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value2);
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value2);
     XCTAssertFalse([rs next], @"There should have been only two records");
-
+    
     // let's clean up
-
+    
     [rs close];
     [db close];
     [manager removeItemAtURL:fileURL error:nil];
@@ -1695,45 +1695,45 @@
     NSURL *tempURL = [NSURL fileURLWithPath:NSTemporaryDirectory()];
     NSURL *fileURL = [tempURL URLByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
     NSFileManager *manager = [NSFileManager defaultManager];
-
+    
     // ok, first create one database
-
+    
     FMDatabase *db = [FMDatabase databaseWithURL:fileURL];
     BOOL success = [db open];
     XCTAssert(success, @"Database not created correctly for purposes of test");
     success = [db executeUpdate:@"CREATE TABLE IF NOT EXISTS foo (id INTEGER PRIMARY KEY, bar TEXT)"];
     XCTAssert(success, @"Table created correctly for purposes of test");
-
+    
     FMResultSet *rs = [db prepare:@"INSERT INTO foo (bar) VALUES (?)"];
     XCTAssert(rs, @"INSERT statement not prepared %@", [db lastErrorMessage]);
-
+    
     NSString *value1 = @"foo";
     XCTAssert([rs bindWithArray:@[value1]], @"Unable to bind");
     XCTAssert([rs step], @"Performing INSERT 1 failed");
-
+    
     NSString *value2 = @"bar";
     XCTAssert([rs bindWithArray:@[value2]], @"Unable to bind");
     XCTAssert([rs step], @"Performing INSERT 2 failed");
     XCTAssert([rs bindWithArray:@[value2]], @"Unable to bind");
     XCTAssert([rs step], @"Performing INSERT 2 failed");
-
+    
     [rs close];
-
+    
     rs = [db prepare:@"SELECT bar FROM foo WHERE bar = ?"];
     XCTAssert([rs bindWithArray:@[value1]], @"Unable to bind");
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value1);
     XCTAssertFalse([rs next], @"There should have been only one record");
-
+    
     XCTAssert([rs bindWithArray:@[value2]], @"Unable to bind");
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value2);
     XCTAssert([rs next], @"No record found");
     XCTAssertEqualObjects([rs stringForColumnIndex:0], value2);
     XCTAssertFalse([rs next], @"There should have been only two records");
-
+    
     // let's clean up
-
+    
     [rs close];
     [db close];
     [manager removeItemAtURL:fileURL error:nil];

@@ -22,14 +22,6 @@ typedef NS_ENUM(NSInteger, FMDBTransaction) {
 };
 
 /*
- 
- Note: we call [self retain]; before using dispatch_sync, just incase 
- FMDatabaseQueue is released on another thread and we're in the middle of doing
- something in dispatch_sync
- 
- */
-
-/*
  * A key used to associate the FMDatabaseQueue object with the dispatch_queue_t it uses.
  * This in turn is used for deadlock detection by seeing if inDatabase: is called on
  * the queue's dispatch queue, which should not happen and causes a deadlock.
@@ -81,6 +73,7 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
     
     if (self != nil) {
         
+        // 在这里, 进行了实际的 DataBase 的创建工作.
         _db = [[[self class] databaseClass] databaseWithPath:aPath];
         FMDBRetain(_db);
         
@@ -158,7 +151,7 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
 - (FMDatabase*)database {
     if (![_db isOpen]) {
         if (!_db) {
-           _db = FMDBReturnRetained([[[self class] databaseClass] databaseWithPath:_path]);
+            _db = FMDBReturnRetained([[[self class] databaseClass] databaseWithPath:_path]);
         }
         
 #if SQLITE_VERSION_NUMBER >= 3005000
@@ -178,15 +171,9 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
 }
 
 - (void)inDatabase:(__attribute__((noescape)) void (^)(FMDatabase *db))block {
-#ifndef NDEBUG
-    /* Get the currently executing queue (which should probably be nil, but in theory could be another DB queue
-     * and then check it against self to make sure we're not about to deadlock. */
-    FMDatabaseQueue *currentSyncQueue = (__bridge id)dispatch_get_specific(kDispatchQueueSpecificKey);
-    assert(currentSyncQueue != self && "inDatabase: was called reentrantly on the same queue, which would lead to a deadlock");
-#endif
-    
     FMDBRetain(self);
     
+    // 串行执行的.
     dispatch_sync(_queue, ^() {
         
         FMDatabase *db = [self database];
@@ -211,10 +198,12 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
 
 - (void)beginTransaction:(FMDBTransaction)transaction withBlock:(void (^)(FMDatabase *db, BOOL *rollback))block {
     FMDBRetain(self);
-    dispatch_sync(_queue, ^() { 
+    dispatch_sync(_queue, ^() {
         
         BOOL shouldRollback = NO;
-
+        
+        // 开启不同的事务.
+        // 具体原理没深究.
         switch (transaction) {
             case FMDBTransactionExclusive:
                 [[self database] beginTransaction];
@@ -231,8 +220,7 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
         
         if (shouldRollback) {
             [[self database] rollback];
-        }
-        else {
+        } else {
             [[self database] commit];
         }
     });
@@ -261,7 +249,7 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
     static unsigned long savePointIdx = 0;
     __block NSError *err = 0x00;
     FMDBRetain(self);
-    dispatch_sync(_queue, ^() { 
+    dispatch_sync(_queue, ^() {
         
         NSString *name = [NSString stringWithFormat:@"savePoint%ld", savePointIdx++];
         
@@ -301,7 +289,7 @@ static const void * const kDispatchQueueSpecificKey = &kDispatchQueueSpecificKey
 - (BOOL)checkpoint:(FMDBCheckpointMode)mode name:(NSString *)name logFrameCount:(int * _Nullable)logFrameCount checkpointCount:(int * _Nullable)checkpointCount error:(NSError * __autoreleasing _Nullable * _Nullable)error
 {
     __block BOOL result;
-
+    
     FMDBRetain(self);
     dispatch_sync(_queue, ^() {
         result = [self.database checkpoint:mode name:name logFrameCount:logFrameCount checkpointCount:checkpointCount error:error];

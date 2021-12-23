@@ -11,8 +11,10 @@
 // MARK: - FMDatabase Private Extension
 
 @interface FMDatabase ()
+
 - (void)resultSetDidClose:(FMResultSet *)resultSet;
 - (BOOL)bindStatement:(sqlite3_stmt *)pStmt WithArgumentsInArray:(NSArray*)arrayArgs orDictionary:(NSDictionary *)dictionaryArgs orVAList:(va_list)args;
+
 @end
 
 // MARK: - FMResultSet Private Extension
@@ -20,7 +22,9 @@
 @interface FMResultSet () {
     NSMutableDictionary *_columnNameToIndexMap;
 }
+
 @property (nonatomic) BOOL shouldAutoClose;
+
 @end
 
 // MARK: - FMResultSet
@@ -28,6 +32,7 @@
 @implementation FMResultSet
 
 + (instancetype)resultSetWithStatement:(FMStatement *)statement usingParentDatabase:(FMDatabase*)aDB shouldAutoClose:(BOOL)shouldAutoClose {
+    
     FMResultSet *rs = [[FMResultSet alloc] init];
     
     [rs setStatement:statement];
@@ -61,13 +66,14 @@
 #endif
 }
 
+/*
+    Result Set 的 Close, 主要是做一些资源回收的工作.
+ */
 - (void)close {
     [_statement reset];
     FMDBRelease(_statement);
     _statement = nil;
     
-    // we don't need this anymore... (i think)
-    //[_parentDB setInUse:NO];
     [_parentDB resultSetDidClose:self];
     [self setParentDB:nil];
 }
@@ -76,6 +82,10 @@
     return sqlite3_column_count([_statement statement]);
 }
 
+/*
+    ResultSet 里面, 存储了 statement 的信息.
+    所以, 其实是能够知道, 输出要有多少列, 每一列的名称是什么的.
+ */
 - (NSMutableDictionary *)columnNameToIndexMap {
     if (!_columnNameToIndexMap) {
         int columnCount = sqlite3_column_count([_statement statement]);
@@ -167,6 +177,10 @@
 
 - (BOOL)nextWithError:(NSError * _Nullable __autoreleasing *)outErr {
     int rc = [self internalStepWithError:outErr];
+    /*
+     #define SQLITE_ROW         100  sqlite3_step() has another row ready
+     #define SQLITE_DONE        101  sqlite3_step() has finished executing 
+     */
     return rc == SQLITE_ROW;
 }
 
@@ -179,7 +193,15 @@
     return rc == SQLITE_DONE;
 }
 
+
+/*
+    Next 函数里面, 进行真正的数据库的读取操作. 然后就使用下面的一系列的值, 进行 Row 的信息获取了. 
+ */
+
+
 - (int)internalStepWithError:(NSError * _Nullable __autoreleasing *)outErr {
+    
+    // sqlite3_step 才会真正的重复啊, SQL 操作.
     int rc = sqlite3_step([_statement statement]);
     
     if (SQLITE_BUSY == rc || SQLITE_LOCKED == rc) {
@@ -188,17 +210,14 @@
         if (outErr) {
             *outErr = [_parentDB lastError];
         }
-    }
-    else if (SQLITE_DONE == rc || SQLITE_ROW == rc) {
+    } else if (SQLITE_DONE == rc || SQLITE_ROW == rc) {
         // all is well, let's return.
-    }
-    else if (SQLITE_ERROR == rc) {
+    } else if (SQLITE_ERROR == rc) {
         NSLog(@"Error calling sqlite3_step (%d: %s) rs", rc, sqlite3_errmsg([_parentDB sqliteHandle]));
         if (outErr) {
             *outErr = [_parentDB lastError];
         }
-    }
-    else if (SQLITE_MISUSE == rc) {
+    } else if (SQLITE_MISUSE == rc) {
         // uh oh.
         NSLog(@"Error calling sqlite3_step (%d: %s) rs", rc, sqlite3_errmsg([_parentDB sqliteHandle]));
         if (outErr) {
@@ -213,15 +232,15 @@
             }
             
         }
-    }
-    else {
-        // wtf?
+    } else {
         NSLog(@"Unknown error calling sqlite3_step (%d: %s) rs", rc, sqlite3_errmsg([_parentDB sqliteHandle]));
         if (outErr) {
             *outErr = [_parentDB lastError];
         }
     }
 
+    // 在执行, step 之后, 如果得到的结果表示已经完结, 并且 _shouldAutoClose
+    // 那么自动调用 close 方法.
     if (rc != SQLITE_ROW && _shouldAutoClose) {
         [self close];
     }
@@ -233,6 +252,8 @@
     return sqlite3_errcode([_parentDB sqliteHandle]) == SQLITE_ROW;
 }
 
+// 首先, 要根据列名, 获取到这个列在 ResultStatment 里面的 Index 的信息.
+// 然后, 真正取值的时候, 是根据这个 Index 进行的取值.
 - (int)columnIndexForName:(NSString*)columnName {
     columnName = [columnName lowercaseString];
     

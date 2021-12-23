@@ -18,8 +18,6 @@ int main (int argc, const char * argv[]) {
     
     @autoreleasepool {
         
-        FMDBReportABugFunction();
-        
         NSString *dbPath = @"/tmp/tmp.db";
         
         // delete the old db.
@@ -31,8 +29,6 @@ int main (int argc, const char * argv[]) {
         NSLog(@"Is SQLite compiled with it's thread safe options turned on? %@!", [FMDatabase isSQLiteThreadSafe] ? @"Yes" : @"No");
         
         {
-            // -------------------------------------------------------------------------------
-            // Un-opened database check.
             FMDBQuickCheck([db executeQuery:@"select * from table"] == nil);
             NSLog(@"%d: %@", [db lastErrorCode], [db lastErrorMessage]);
         }
@@ -40,7 +36,6 @@ int main (int argc, const char * argv[]) {
         
         if (![db open]) {
             NSLog(@"Could not open db.");
-            
             return 0;
         }
         
@@ -150,7 +145,7 @@ int main (int argc, const char * argv[]) {
         // close the result set.
         // it'll also close when it's dealloc'd, but we're closing the database before
         // the autorelease pool closes, so sqlite will complain about it.
-        [rs close];  
+        [rs close];
         
         FMDBQuickCheck(![db hasOpenResultSets]);
         
@@ -608,7 +603,7 @@ int main (int argc, const char * argv[]) {
             rs = [db executeQuery:@"select * from utest where a = ?", @"/übertest"];
             FMDBQuickCheck([rs next]);
             [rs close];
-        }   
+        }
         
         
         {
@@ -1503,11 +1498,9 @@ void FMDBReportABugFunction() {
     FMDatabaseQueue *queue = [FMDatabaseQueue databaseQueueWithPath:dbPath];
     
     [queue inDatabase:^(FMDatabase *db) {
-        
         /*
          Change the contents of this block to suit your needs.
          */
-        
         BOOL worked = [db executeUpdate:@"create table test (a text, b text, c integer, d double, e double)"];
         FMDBQuickCheck(worked);
         
@@ -1518,7 +1511,6 @@ void FMDBReportABugFunction() {
         FMResultSet *rs = [db executeQuery:@"select * from test"];
         FMDBQuickCheck([rs next]);
         [rs close];
-        
     }];
     
     

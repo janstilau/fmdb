@@ -68,6 +68,9 @@ NS_ASSUME_NONNULL_END
     return [self initWithPath:url.path];
 }
 
+/*
+ 在初始化方法里面, 仅仅是做一些值的存储的工作. 
+ */
 - (instancetype)initWithPath:(NSString *)path {
     
     assert(sqlite3_threadsafe()); // whoa there big boy- gotta make sure sqlite it happy with what we're going to do.
@@ -127,7 +130,7 @@ NS_ASSUME_NONNULL_END
         while ([[prodVersion componentsSeparatedByString:@"."] count] < 3) {
             prodVersion = [prodVersion stringByAppendingString:@".0"];
         }
-
+        
         NSArray *components = [prodVersion componentsSeparatedByString:@"."];
         for (NSUInteger i = 0; i < 3; i++) {
             SInt32 component = [components[i] intValue];
@@ -183,13 +186,13 @@ NS_ASSUME_NONNULL_END
     }
     
     // if we previously tried to open and it failed, make sure to close it before we try again
-    
     if (_db) {
         [self close];
     }
     
-    // now open database
-
+    /*
+     最终真正打开数据库的操作, 还是使用 sqlite3_open 函数. 如果打开成功了, _db 才会有值.
+     */
     int err = sqlite3_open([self sqlitePath], (sqlite3**)&_db );
     if(err != SQLITE_OK) {
         NSLog(@"error opening!: %d", err);
@@ -328,9 +331,7 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     
     if (timeout > 0) {
         sqlite3_busy_handler(_db, &FMDBDatabaseBusyHandler, (__bridge void *)(self));
-    }
-    else {
-        // turn it off otherwise
+    } else {
         sqlite3_busy_handler(_db, nil, nil);
     }
 }
@@ -377,7 +378,6 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 
 - (void)resultSetDidClose:(FMResultSet *)resultSet {
     NSValue *setValue = [NSValue valueWithNonretainedObject:resultSet];
-    
     [_openResultSets removeObject:setValue];
 }
 
@@ -399,10 +399,8 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     NSMutableSet* statements = [_cachedStatements objectForKey:query];
     
     return [[statements objectsPassingTest:^BOOL(FMStatement* statement, BOOL *stop) {
-        
         *stop = ![statement inUse];
         return *stop;
-        
     }] anyObject];
 }
 
@@ -523,7 +521,7 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     // https://discuss.zetetic.net/t/important-advisory-sqlcipher-with-xcode-8-and-new-sdks/1688
     
     FMResultSet *rs = [self executeQuery:@"PRAGMA cipher_version"];
-
+    
     if ([rs next]) {
         NSLog(@"SQLCipher version: %@", rs.resultDictionary[@"cipher_version"]);
         
@@ -554,7 +552,6 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 }
 
 - (BOOL)databaseExists {
-    
     if (!_isOpen) {
         
         NSLog(@"The FMDatabase %@ is not open.", self);
@@ -575,12 +572,15 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 #pragma mark Error routines
 
 - (NSString *)lastErrorMessage {
+    // 直接使用 sqlite3_errmsg 来获取出错的信息.
     return [NSString stringWithUTF8String:sqlite3_errmsg(_db)];
 }
 
+/*
+ _Db 里面, 会存储上一次出错的信息.
+ */
 - (BOOL)hadError {
     int lastErrCode = [self lastErrorCode];
-    
     return (lastErrCode > SQLITE_OK && lastErrCode < SQLITE_ROW);
 }
 
@@ -594,7 +594,6 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 
 - (NSError*)errorWithMessage:(NSString *)message {
     NSDictionary* errorMessage = [NSDictionary dictionaryWithObject:message forKey:NSLocalizedDescriptionKey];
-    
     return [NSError errorWithDomain:@"FMDatabase" code:sqlite3_errcode(_db) userInfo:errorMessage];
 }
 
@@ -704,7 +703,7 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
             return sqlite3_bind_text(pStmt, idx, [[obj description] UTF8String], -1, SQLITE_TRANSIENT);
         }
     }
-
+    
     return sqlite3_bind_text(pStmt, idx, [[obj description] UTF8String], -1, SQLITE_TRANSIENT);
 }
 
@@ -834,7 +833,17 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     return [self executeQuery:sql withArgumentsInArray:nil orDictionary:arguments orVAList:nil shouldBind:true];
 }
 
-- (FMResultSet *)executeQuery:(NSString *)sql withArgumentsInArray:(NSArray*)arrayArgs orDictionary:(NSDictionary *)dictionaryArgs orVAList:(va_list)args shouldBind:(BOOL)shouldBind {
+/*
+ 这里所有的操作, 是建立一个 sqlite3_stmt, 然后将数值绑定到上面.
+ 但这个时候, 其实没有执行.
+ 真正执行, 是在 FMResultSet next 被调用的时候.
+ */
+- (FMResultSet *)executeQuery:(NSString *)sql
+         withArgumentsInArray:(NSArray*)arrayArgs
+                 orDictionary:(NSDictionary *)dictionaryArgs
+                     orVAList:(va_list)args
+                   shouldBind:(BOOL)shouldBind {
+    
     if (![self databaseExists]) {
         return 0x00;
     }
@@ -851,10 +860,6 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     FMStatement *statement  = 0x00;
     FMResultSet *rs         = 0x00;
     
-    if (_traceExecution && sql) {
-        NSLog(@"%@ executeQuery: %@", self, sql);
-    }
-    
     if (_shouldCacheStatements) {
         statement = [self cachedStatementForQuery:sql];
         pStmt = statement ? [statement statement] : 0x00;
@@ -865,31 +870,20 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
         rc = sqlite3_prepare_v2(_db, [sql UTF8String], -1, &pStmt, 0);
         
         if (SQLITE_OK != rc) {
-            if (_logsErrors) {
-                NSLog(@"DB Error: %d \"%@\"", [self lastErrorCode], [self lastErrorMessage]);
-                NSLog(@"DB Query: %@", sql);
-                NSLog(@"DB Path: %@", _databasePath);
-            }
-            
-            if (_crashOnErrors) {
-                NSAssert(false, @"DB Error: %d \"%@\"", [self lastErrorCode], [self lastErrorMessage]);
-                abort();
-            }
-            
             sqlite3_finalize(pStmt);
             pStmt = 0x00;
             _isExecutingStatement = NO;
             return nil;
         }
     }
-
+    
     if (shouldBind) {
         BOOL success = [self bindStatement:pStmt WithArgumentsInArray:arrayArgs orDictionary:dictionaryArgs orVAList:args];
         if (!success) {
             return nil;
         }
     }
-
+    
     FMDBRetain(statement); // to balance the release below
     
     if (!statement) {
@@ -907,6 +901,8 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
     [rs setQuery:sql];
     
     NSValue *openResultSet = [NSValue valueWithNonretainedObject:rs];
+    // 每执行一个 Query, 都会增加 _openResultSets 里面的数量.
+    // 每个 FMResultSet Close 的时候, 会减少 _openResultSets 里面的数量. 
     [_openResultSets addObject:openResultSet];
     
     [statement setUseCount:[statement useCount] + 1];
@@ -919,27 +915,24 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 }
 
 - (BOOL)bindStatement:(sqlite3_stmt *)pStmt WithArgumentsInArray:(NSArray*)arrayArgs orDictionary:(NSDictionary *)dictionaryArgs orVAList:(va_list)args {
+    
     id obj;
     int idx = 0;
     int queryCount = sqlite3_bind_parameter_count(pStmt); // pointed out by Dominic Yu (thanks!)
-
+    
     // If dictionaryArgs is passed in, that means we are using sqlite's named parameter support
     if (dictionaryArgs) {
-
+        
         for (NSString *dictionaryKey in [dictionaryArgs allKeys]) {
-
+            
             // Prefix the key with a colon.
             NSString *parameterName = [[NSString alloc] initWithFormat:@":%@", dictionaryKey];
-
-            if (_traceExecution) {
-                NSLog(@"%@ = %@", parameterName, [dictionaryArgs objectForKey:dictionaryKey]);
-            }
-
+            
             // Get the index for the parameter name.
             int namedIdx = sqlite3_bind_parameter_index(pStmt, [parameterName UTF8String]);
-
+            
             FMDBRelease(parameterName);
-
+            
             if (namedIdx > 0) {
                 // Standard binding from here.
                 int rc = [self bindObject:[dictionaryArgs objectForKey:dictionaryKey] toColumn:namedIdx inStatement:pStmt];
@@ -970,18 +963,9 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
                 //We ran out of arguments
                 break;
             }
-
-            if (_traceExecution) {
-                if ([obj isKindOfClass:[NSData class]]) {
-                    NSLog(@"data: %ld bytes", (unsigned long)[(NSData*)obj length]);
-                }
-                else {
-                    NSLog(@"obj: %@", obj);
-                }
-            }
-
+            
             idx++;
-
+            
             int rc = [self bindObject:obj toColumn:idx inStatement:pStmt];
             if (rc != SQLITE_OK) {
                 NSLog(@"Error: unable to bind (%d, %s", rc, sqlite3_errmsg(_db));
@@ -992,7 +976,7 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
             }
         }
     }
-
+    
     if (idx != queryCount) {
         NSLog(@"Error: the bind count is not correct for the # of variables (executeQuery)");
         sqlite3_finalize(pStmt);
@@ -1000,10 +984,14 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
         _isExecutingStatement = NO;
         return false;
     }
-
+    
     return true;
 }
 
+/*
+ executeQuery update, 里面会创建一个 FMResultSet, 然后直接在里面, 调用 next 函数.
+ 而 executeQuery 会将创建的 FMResultSet 返回, 交给用户一点点的进行 row 的获取. 
+ */
 - (FMResultSet *)executeQuery:(NSString*)sql, ... {
     va_list args;
     va_start(args, sql);
@@ -1045,7 +1033,12 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
 
 #pragma mark Execute updates
 
-- (BOOL)executeUpdate:(NSString*)sql error:(NSError * _Nullable __autoreleasing *)outErr withArgumentsInArray:(NSArray*)arrayArgs orDictionary:(NSDictionary *)dictionaryArgs orVAList:(va_list)args {
+- (BOOL)executeUpdate:(NSString*)sql
+                error:(NSError * _Nullable __autoreleasing *)outErr
+ withArgumentsInArray:(NSArray*)arrayArgs
+         orDictionary:(NSDictionary *)dictionaryArgs
+             orVAList:(va_list)args {
+    
     FMResultSet *rs = [self executeQuery:sql withArgumentsInArray:arrayArgs orDictionary:dictionaryArgs orVAList:args shouldBind:true];
     if (!rs) {
         if (outErr) {
@@ -1053,7 +1046,7 @@ static int FMDBDatabaseBusyHandler(void *f, int count) {
         }
         return false;
     }
-
+    
     return [rs internalStepWithError:outErr] == SQLITE_DONE;
 }
 
@@ -1270,7 +1263,7 @@ static NSString *FMDBEscapeSavePointName(NSString *savepointName) {
     NSParameterAssert(name);
     
     NSString *sql = [NSString stringWithFormat:@"release savepoint '%@';", FMDBEscapeSavePointName(name)];
-
+    
     return [self executeUpdate:sql error:outErr withArgumentsInArray:nil orDictionary:nil orVAList:nil];
 #else
     NSString *errorMessage = NSLocalizedStringFromTable(@"Save point functions require SQLite 3.7", @"FMDB", nil);
@@ -1284,7 +1277,7 @@ static NSString *FMDBEscapeSavePointName(NSString *savepointName) {
     NSParameterAssert(name);
     
     NSString *sql = [NSString stringWithFormat:@"rollback transaction to savepoint '%@';", FMDBEscapeSavePointName(name)];
-
+    
     return [self executeUpdate:sql error:outErr withArgumentsInArray:nil orDictionary:nil orVAList:nil];
 #else
     NSString *errorMessage = NSLocalizedStringFromTable(@"Save point functions require SQLite 3.7", @"FMDB", nil);
@@ -1363,6 +1356,9 @@ static NSString *FMDBEscapeSavePointName(NSString *savepointName) {
     return _shouldCacheStatements;
 }
 
+/*
+ 设置, 是否要对 statement 的结果进行缓存. 
+ */
 - (void)setShouldCacheStatements:(BOOL)value {
     
     _shouldCacheStatements = value;
@@ -1370,7 +1366,6 @@ static NSString *FMDBEscapeSavePointName(NSString *savepointName) {
     if (_shouldCacheStatements && !_cachedStatements) {
         [self setCachedStatements:[NSMutableDictionary dictionary]];
     }
-    
     if (!_shouldCacheStatements) {
         [self setCachedStatements:nil];
     }
@@ -1517,7 +1512,6 @@ void FMDBBlockSQLiteCallBackFunction(sqlite3_context *context, int argc, sqlite3
     if (_statement) {
         sqlite3_reset(_statement);
     }
-    
     _inUse = NO;
 }
 
